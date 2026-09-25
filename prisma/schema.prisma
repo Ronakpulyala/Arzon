@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  HR
+  EMPLOYEE
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  EARNED
+  UNPAID
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  HALF_DAY
+  ON_LEAVE
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String
+  email         String     @unique
+  passwordHash  String
+  role          Role       @default(EMPLOYEE)
+  department    String?
+  designation   String?
+  dateJoined    DateTime   @default(now())
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  attendance    Attendance[]
+  leaves        Leave[]
+  salaries      Salary[]
+  salesReports  SalesReport[]
+}
+
+model Attendance {
+  id         String            @id @default(cuid())
+  userId     String
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime          @db.Date
+  loginAt    DateTime?
+  logoutAt   DateTime?
+  status     AttendanceStatus  @default(PRESENT)
+  hoursLogged Float?
+  notes      String?
+  createdAt  DateTime          @default(now())
+
+  @@unique([userId, date])
+  @@index([date])
+}
+
+model Leave {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       LeaveType
+  startDate  DateTime    @db.Date
+  endDate    DateTime    @db.Date
+  reason     String
+  status     LeaveStatus @default(PENDING)
+  reviewedBy String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Salary {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month         Int
+  year          Int
+  basic         Float
+  allowances    Float    @default(0)
+  deductions    Float    @default(0)
+  bonus         Float    @default(0)
+  netPay        Float
+  paidOn        DateTime?
+  payslipUrl    String?
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, month, year])
+}
+
+model SalesReport {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientName   String
+  courseOrPlan String
+  dealValue    Float
+  status       String   @default("IN_PROGRESS") // LEAD, IN_PROGRESS, CLOSED_WON, CLOSED_LOST
+  reportDate   DateTime @db.Date
+  remarks      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([reportDate])
+  @@index([status])
+}
