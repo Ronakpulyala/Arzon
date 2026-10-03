@@ -17,6 +17,7 @@ enum LeaveStatus {
   PENDING
   APPROVED
   REJECTED
+  CANCELLED
 }
 
 enum LeaveType {
@@ -35,17 +36,20 @@ enum AttendanceStatus {
 }
 
 model User {
-  id            String     @id @default(cuid())
-  name          String
-  email         String     @unique
-  passwordHash  String
-  role          Role       @default(EMPLOYEE)
-  department    String?
-  designation   String?
-  dateJoined    DateTime   @default(now())
-  isActive      Boolean    @default(true)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id             String     @id @default(cuid())
+  name           String
+  email          String     @unique
+  passwordHash   String
+  role           Role       @default(EMPLOYEE)
+  department     String?
+  designation    String?
+  dateJoined     DateTime   @default(now())
+  isActive       Boolean    @default(true)
+  baseSalary     Float      @default(0)
+  // Fraction of closed-won deal value paid as commission, e.g. 0.05 = 5%.
+  commissionRate Float      @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   attendance    Attendance[]
   leaves        Leave[]
@@ -101,6 +105,21 @@ model Salary {
   @@unique([userId, month, year])
 }
 
+enum SalesStatus {
+  LEAD
+  IN_PROGRESS
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  UPI
+  CARD
+  OTHER
+}
+
 model SalesReport {
   id           String   @id @default(cuid())
   userId       String
@@ -108,12 +127,38 @@ model SalesReport {
   clientName   String
   courseOrPlan String
   dealValue    Float
-  status       String   @default("IN_PROGRESS") // LEAD, IN_PROGRESS, CLOSED_WON, CLOSED_LOST
+  status       SalesStatus   @default(IN_PROGRESS)
   reportDate   DateTime @db.Date
   remarks      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  payments     SalesPayment[]
+
   @@index([reportDate])
+  @@index([status])
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model SalesPayment {
+  id            String        @id @default(cuid())
+  salesReportId String
+  salesReport   SalesReport   @relation(fields: [salesReportId], references: [id], onDelete: Cascade)
+  amount        Float
+  method        PaymentMethod @default(BANK_TRANSFER)
+  paidOn        DateTime      @db.Date
+  reference     String?
+  notes         String?
+  status        PaymentStatus @default(PENDING)
+  approvedBy    String?
+  createdAt     DateTime      @default(now())
+
+  @@index([salesReportId])
+  @@index([paidOn])
   @@index([status])
 }

@@ -14,11 +14,22 @@ export function StatCard({
   icon: LucideIcon;
   tone?: "neutral" | "positive" | "warn";
 }) {
+  const iconTone = {
+    neutral: "bg-navy-900/5 text-navy-800 group-hover:bg-navy-900/10",
+    positive: "bg-success/10 text-success group-hover:bg-success/15",
+    warn: "bg-warn/10 text-warn group-hover:bg-warn/15"
+  }[tone];
+
   return (
-    <div className="rounded-lg border border-ink-100 bg-surface-card p-5">
+    <div className="group rounded-lg border border-ink-100 bg-surface-card p-5 shadow-subtle transition-all duration-200 hover:-translate-y-0.5 hover:border-ink-100 hover:shadow-md">
       <div className="flex items-start justify-between">
         <p className="text-xs font-medium text-ink-500">{label}</p>
-        <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-navy-900/5 text-navy-800">
+        <div
+          className={clsx(
+            "flex h-8 w-8 items-center justify-center rounded-sm transition-colors duration-200",
+            iconTone
+          )}
+        >
           <Icon size={15} strokeWidth={1.8} />
         </div>
       </div>

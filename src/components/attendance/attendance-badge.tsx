@@ -1,6 +1,6 @@
 import type { AttendanceStatus } from "@prisma/client";
-import { STATUS_STYLES } from "@/lib/attendance";
 import { clsx } from "clsx";
+import { STATUS_STYLES } from "@/lib/attendance";
 
 export function AttendanceBadge({ status }: { status: AttendanceStatus }) {
   const style = STATUS_STYLES[status];

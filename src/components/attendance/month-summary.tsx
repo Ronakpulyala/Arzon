@@ -17,9 +17,9 @@ export function MonthSummary({
   ];
 
   return (
-    <div className="grid grid-cols-4 divide-x divide-ink-100 rounded-lg border border-ink-100 bg-surface-card">
+    <div className="grid grid-cols-4 divide-x divide-ink-100 rounded-lg border border-ink-100 bg-surface-card shadow-subtle">
       {items.map((item) => (
-        <div key={item.label} className="px-4 py-3 text-center">
+        <div key={item.label} className="px-2 py-3 text-center sm:px-4">
           <p className={`font-display text-lg font-semibold ${item.tone}`}>{item.value}</p>
           <p className="mt-0.5 text-[11px] text-ink-500">{item.label}</p>
         </div>

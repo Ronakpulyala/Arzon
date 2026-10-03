@@ -1,51 +1,46 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth, canReview } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { todayDateOnly } from "@/lib/attendance";
+import { monthRange, parseMonthParam, statusCounts, todayDateOnly } from "@/lib/attendance";
 import { PageHeader } from "@/components/page-header";
 import { CheckInCard } from "@/components/attendance/check-in-card";
 import { AttendanceCalendar } from "@/components/attendance/attendance-calendar";
 import { MonthSummary } from "@/components/attendance/month-summary";
 import { TeamAttendanceTable } from "@/components/attendance/team-table";
 
-export default async function AttendancePage() {
-  const session = await getServerSession(authOptions);
+export default async function AttendancePage({
+  searchParams
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const { month: monthParam } = await searchParams;
+  const session = await auth();
   const user = session!.user;
-  const today = todayDateOnly();
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
-  const [myMonthRecords, todaysRecord] = await Promise.all([
+  const today = todayDateOnly();
+  const { year, month } = parseMonthParam(monthParam);
+  const { start, end } = monthRange(year, month);
+
+  const [monthRecords, todaysRecord] = await Promise.all([
     prisma.attendance.findMany({
-      where: { userId: user.id, date: { gte: monthStart, lte: monthEnd } },
+      where: { userId: user.id, date: { gte: start, lte: end } },
       orderBy: { date: "asc" }
     }),
-    prisma.attendance.findUnique({
-      where: { userId_date: { userId: user.id, date: today } }
-    })
+    prisma.attendance.findUnique({ where: { userId_date: { userId: user.id, date: today } } })
   ]);
 
-  const summary = myMonthRecords.reduce(
-    (acc, r) => {
-      if (r.status === "PRESENT") acc.present++;
-      else if (r.status === "LATE") acc.late++;
-      else if (r.status === "ABSENT") acc.absent++;
-      else if (r.status === "ON_LEAVE") acc.onLeave++;
-      return acc;
-    },
-    { present: 0, late: 0, absent: 0, onLeave: 0 }
-  );
+  const counts = statusCounts(monthRecords);
+  const showTeam = canReview(user.role);
 
-  const canSeeTeam = user.role === "ADMIN" || user.role === "HR";
-
-  const team = canSeeTeam
+  const team = showTeam
     ? await prisma.user.findMany({
         where: { isActive: true },
         orderBy: { name: "asc" },
-        include: {
-          attendance: {
-            where: { date: today }
-          }
+        select: {
+          id: true,
+          name: true,
+          department: true,
+          designation: true,
+          attendance: { where: { date: today } }
         }
       })
     : [];
@@ -54,24 +49,25 @@ export default async function AttendancePage() {
     <div>
       <PageHeader
         title="Attendance"
-        description="Daily login/logout tracking and attendance status."
+        description="Daily check-in/out tracking. Browse previous months with the arrows on the calendar."
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-1 space-y-4">
+        <div className="space-y-4 lg:col-span-1">
           <CheckInCard today={todaysRecord} />
-          <MonthSummary {...summary} />
+          <MonthSummary
+            present={counts.PRESENT}
+            late={counts.LATE}
+            absent={counts.ABSENT}
+            onLeave={counts.ON_LEAVE}
+          />
         </div>
         <div className="lg:col-span-2">
-          <AttendanceCalendar
-            year={today.getFullYear()}
-            month={today.getMonth()}
-            records={myMonthRecords}
-          />
+          <AttendanceCalendar year={year} month={month} records={monthRecords} />
         </div>
       </div>
 
-      {canSeeTeam && (
+      {showTeam && (
         <div className="mt-6">
           <TeamAttendanceTable employees={team} />
         </div>

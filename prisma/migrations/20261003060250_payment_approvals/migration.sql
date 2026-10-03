@@ -2,13 +2,22 @@
 CREATE TYPE "Role" AS ENUM ('ADMIN', 'HR', 'EMPLOYEE');
 
 -- CreateEnum
-CREATE TYPE "LeaveStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+CREATE TYPE "LeaveStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "LeaveType" AS ENUM ('SICK', 'CASUAL', 'EARNED', 'UNPAID');
 
 -- CreateEnum
 CREATE TYPE "AttendanceStatus" AS ENUM ('PRESENT', 'LATE', 'ABSENT', 'HALF_DAY', 'ON_LEAVE');
+
+-- CreateEnum
+CREATE TYPE "SalesStatus" AS ENUM ('LEAD', 'IN_PROGRESS', 'CLOSED_WON', 'CLOSED_LOST');
+
+-- CreateEnum
+CREATE TYPE "PaymentMethod" AS ENUM ('CASH', 'BANK_TRANSFER', 'UPI', 'CARD', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -21,6 +30,8 @@ CREATE TABLE "User" (
     "designation" TEXT,
     "dateJoined" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "baseSalary" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "commissionRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -83,13 +94,29 @@ CREATE TABLE "SalesReport" (
     "clientName" TEXT NOT NULL,
     "courseOrPlan" TEXT NOT NULL,
     "dealValue" DOUBLE PRECISION NOT NULL,
-    "status" TEXT NOT NULL DEFAULT 'IN_PROGRESS',
+    "status" "SalesStatus" NOT NULL DEFAULT 'IN_PROGRESS',
     "reportDate" DATE NOT NULL,
     "remarks" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "SalesReport_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "SalesPayment" (
+    "id" TEXT NOT NULL,
+    "salesReportId" TEXT NOT NULL,
+    "amount" DOUBLE PRECISION NOT NULL,
+    "method" "PaymentMethod" NOT NULL DEFAULT 'BANK_TRANSFER',
+    "paidOn" DATE NOT NULL,
+    "reference" TEXT,
+    "notes" TEXT,
+    "status" "PaymentStatus" NOT NULL DEFAULT 'PENDING',
+    "approvedBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "SalesPayment_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -110,6 +137,15 @@ CREATE INDEX "SalesReport_reportDate_idx" ON "SalesReport"("reportDate");
 -- CreateIndex
 CREATE INDEX "SalesReport_status_idx" ON "SalesReport"("status");
 
+-- CreateIndex
+CREATE INDEX "SalesPayment_salesReportId_idx" ON "SalesPayment"("salesReportId");
+
+-- CreateIndex
+CREATE INDEX "SalesPayment_paidOn_idx" ON "SalesPayment"("paidOn");
+
+-- CreateIndex
+CREATE INDEX "SalesPayment_status_idx" ON "SalesPayment"("status");
+
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -121,3 +157,6 @@ ALTER TABLE "Salary" ADD CONSTRAINT "Salary_userId_fkey" FOREIGN KEY ("userId") 
 
 -- AddForeignKey
 ALTER TABLE "SalesReport" ADD CONSTRAINT "SalesReport_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SalesPayment" ADD CONSTRAINT "SalesPayment_salesReportId_fkey" FOREIGN KEY ("salesReportId") REFERENCES "SalesReport"("id") ON DELETE CASCADE ON UPDATE CASCADE;

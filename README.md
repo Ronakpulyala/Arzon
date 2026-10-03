@@ -1,84 +1,65 @@
 # Arzon Global — Admin Console
 
-Internal admin panel for Arzon Global (edtech + sales): employee attendance,
-leaves, salary/payroll, and sales reports.
+Internal admin panel for Arzon Global (edtech + sales): attendance, leaves,
+sales reports & payments, and team reporting.
 
 ## Stack
 
-- **Next.js 14** (App Router, TypeScript)
-- **Tailwind CSS** — custom navy/amber design tokens in `tailwind.config.ts`
-- **Prisma + PostgreSQL** — schema in `prisma/schema.prisma`
-- **NextAuth.js** — credentials (email/password) login
+Next.js 16 (App Router) · TypeScript · Tailwind · Prisma + PostgreSQL (Supabase) ·
+next-auth v4 (credentials, JWT) · recharts
 
-## What's built so far (foundation)
+## Modules
 
-- Project scaffold, Tailwind theme, fonts (Space Grotesk + Inter)
-- Prisma schema covering `User`, `Attendance`, `Leave`, `Salary`, `SalesReport`
-- NextAuth credentials login (`/login`) with JWT sessions + role on the session
-- Protected dashboard shell: sidebar (role-aware nav) + topbar (live clock,
-  profile, sign out) at `src/app/(dashboard)/layout.tsx`
-- Dashboard overview page with placeholder stat cards
-- Placeholder pages for every module so navigation is fully wired:
-  Attendance, Leaves, Salary, Sales Reports, Employees (admin/HR), Reports (admin/HR)
+- **Dashboard** — live, role-aware: attendance today, pending leaves, sales closed / collected this
+  month, revenue chart, recent deals.
+- **Attendance** — check-in/out, PRESENT/LATE (10:15 cut-off), month-by-month calendar, searchable team table (Admin/HR).
+- **Leaves** — request form with overlap + balance validation, cancel pending requests, balance bars,
+  Admin/HR approval queue and full request history with filters.
+- **Sales Reports** — employees log deals and submit payments against each one (progress bar,
+  over-claiming blocked). **Payments require Admin approval** before they count as collected — an
+  Admin's own entries auto-approve. Admins get a "Payments awaiting approval" queue at the top of the
+  page. Admin/HR also see every deal (filter by employee/stage, totals) and a full **payments ledger**
+  with a status column/filter.
+- **Reports** (Admin/HR) — period filter, KPIs, revenue / collections / attendance / leave charts,
+  per-employee performance table, CSV export.
+- **Salary** — every employee sees their payout history and an *estimated next payout*
+  (base salary + commission on deals they've personally closed-won this month, calculated live from
+  Sales Reports). Admin/HR get a "run this month's payroll" table per employee (one click computes and
+  records base + commission) and a full payroll ledger.
+- **Employees** (Admin only — hidden from HR) — create new employees (sets an initial password,
+  role, department, base salary, commission %), edit anyone's compensation inline, deactivate/
+  reactivate accounts, and see each employee's deals won + pending leaves this month at a glance.
 
-- **Attendance** (`/attendance`) — done:
-  - Check-in / check-out via server actions (`src/app/(dashboard)/attendance/actions.ts`),
-    one `Attendance` row per user per day (`userId_date` unique constraint)
-  - Auto status: `PRESENT` vs `LATE` based on a 10:15 AM cutoff
-    (`LATE_CUTOFF_HOUR` / `LATE_CUTOFF_MINUTE` in `src/lib/attendance.ts`)
-  - Personal monthly calendar with a color-coded dot per day, plus a
-    present/late/absent/on-leave summary strip
-  - Admin/HR-only team table showing everyone's check-in/out status for today
-  - Not yet handled: automatically marking `ABSENT` for days with no check-in
-    (needs a scheduled job / cron), and admin ability to manually edit a past
-    day's record
-
-## Not built yet (next steps, in suggested order)
-
-1. **Leaves** — request form, balance tracking, approval workflow
-2. **Sales Reports** — "add report" form for employees, pipeline table, filters
-3. **Salary** — payroll table, payslip PDF, payment status
-4. **Employees** — directory, add/edit, role assignment
-5. **Reports** — charts (recharts is already installed) combining the above
-
-## Getting started locally
+## Setup
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Set up environment variables
-cp .env.example .env
-# then edit .env with your PostgreSQL connection string and a NEXTAUTH_SECRET
-# generate a secret with: openssl rand -base64 32
-
-# 3. Create the database schema
-npx prisma migrate dev --name init
-
-# 4. Seed an admin user + 3 sample employees
-npm run seed
-# admin@arzonglobal.com / Arzon@123
-# ananya.rao@arzonglobal.com, rahul.mehta@arzonglobal.com, priya.nair@arzonglobal.com / Employee@123
-
-# 5. Run the dev server
+cp .env.example .env            # fill in DATABASE_URL, NEXTAUTH_SECRET
+npx prisma migrate dev --name sales_payments_and_leave_cancel
+npm run seed                    # users + demo sales, payments, leaves, attendance
 npm run dev
 ```
 
-Visit `http://localhost:3000` — it redirects to `/login`. Sign in with the
-seeded admin account, then change that password once you build the profile/
-settings screen.
+Seeded logins: `admin@arzonglobal.com / Arzon@123` (ADMIN) ·
+`hr@arzonglobal.com / Employee@123` (HR) ·
+`ananya.rao@` / `rahul.mehta@` / `priya.nair@arzonglobal.com / Employee@123` (EMPLOYEE).
+`npm run seed` is safe to re-run; set `SEED_DEMO=false` to skip demo data.
 
-## Roles
+## UI
 
-`User.role` is one of `ADMIN`, `HR`, `EMPLOYEE`. The sidebar and route
-`middleware.ts` are role-aware — `Employees` and `Reports` are hidden from
-plain `EMPLOYEE` accounts. Extend the checks in `src/lib/nav.ts` and inside
-each page/server action as new modules are added.
+- Sidebar: every section the role can see is always listed (no icon-only collapse), with a live
+  amber count badge on Leaves (pending requests) and Sales Reports (payments awaiting approval),
+  amber-tinted hover with a slide + icon-color transition, and a persistent accent bar on the active
+  item.
+- Cards/tables share a consistent subtle shadow with a hover lift on stat cards, and a brief fade-in
+  on page navigation (skipped automatically for users with reduced-motion enabled).
 
-## Design notes
+## Notes
 
-- Palette: deep navy (`navy-900` sidebar) + amber accent (active nav state,
-  primary actions) — avoids the generic "AI dashboard" look (no purple
-  gradients, no all-caps eyebrows, no uniform shadow-on-every-card).
-- Active nav items get a thin amber left-edge indicator rather than a filled
-  pill, echoing a ledger/attendance-sheet feel appropriate to HR + ops data.
+- Dates are stored as UTC calendar dates and "today" is computed in `APP_TIMEZONE`
+  (default Asia/Kolkata), so a check-in always lands on the day the employee sees.
+- Commission is a flat % per employee (set on the Employees or Salary page), applied to CLOSED_WON
+  deal value in the current calendar month. "Estimated next payout" recalculates live as deals close;
+  it's finalized only when Admin/HR clicks "Pay this month" on the Salary page.
+- Still to build: payslip PDFs, auto-marking ABSENT (needs a scheduled job), email notifications,
+  editable leave allotments per employee.

@@ -9,11 +9,15 @@ import {
   FileBarChart
 } from "lucide-react";
 
+export type NavBadgeKey = "pendingLeaves" | "pendingPayments";
+
 export type NavItem = {
   label: string;
   href: string;
   icon: LucideIcon;
   roles: Array<"ADMIN" | "HR" | "EMPLOYEE">;
+  /** Key into the badges map passed to the sidebar — shows a live count pill when > 0. */
+  badgeKey?: NavBadgeKey;
 };
 
 export const navItems: NavItem[] = [
@@ -33,7 +37,8 @@ export const navItems: NavItem[] = [
     label: "Leaves",
     href: "/leaves",
     icon: CalendarDays,
-    roles: ["ADMIN", "HR", "EMPLOYEE"]
+    roles: ["ADMIN", "HR", "EMPLOYEE"],
+    badgeKey: "pendingLeaves"
   },
   {
     label: "Salary",
@@ -45,13 +50,14 @@ export const navItems: NavItem[] = [
     label: "Sales Reports",
     href: "/sales-reports",
     icon: TrendingUp,
-    roles: ["ADMIN", "HR", "EMPLOYEE"]
+    roles: ["ADMIN", "HR", "EMPLOYEE"],
+    badgeKey: "pendingPayments"
   },
   {
     label: "Employees",
     href: "/employees",
     icon: Users,
-    roles: ["ADMIN", "HR"]
+    roles: ["ADMIN"]
   },
   {
     label: "Reports",

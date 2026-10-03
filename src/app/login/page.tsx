@@ -47,7 +47,7 @@ export default function LoginPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-lg border border-ink-100 bg-surface-card p-6"
+          className="rounded-lg border border-ink-100 bg-surface-card p-6 shadow-subtle"
         >
           <div className="space-y-4">
             <div>
