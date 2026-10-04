@@ -34,6 +34,7 @@ export default async function SalesReportsPage() {
       r.payments.map((p) => ({
         id: p.id,
         amount: p.amount,
+        type: p.type,
         method: p.method,
         status: p.status,
         paidOn: p.paidOn,
@@ -52,6 +53,7 @@ export default async function SalesReportsPage() {
         .map((p) => ({
           id: p.id,
           amount: p.amount,
+          type: p.type,
           method: p.method,
           paidOn: p.paidOn,
           reference: p.reference,

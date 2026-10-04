@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { auth, canReview, isAdmin } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { PAYMENT_METHOD_LABELS, SALES_STATUS_LABELS } from "@/lib/sales";
+import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_LABELS, SALES_STATUS_LABELS } from "@/lib/sales";
 import type { ActionState } from "@/lib/use-form-action";
-import type { PaymentMethod, SalesStatus } from "@prisma/client";
+import type { PaymentMethod, PaymentType, SalesStatus } from "@prisma/client";
 
 function refresh() {
   revalidatePath("/sales-reports");
@@ -52,12 +52,14 @@ export async function addPayment(formData: FormData): Promise<ActionState> {
 
   const salesReportId = formData.get("salesReportId") as string;
   const amount = Number(formData.get("amount"));
+  const type = formData.get("type") as PaymentType;
   const method = formData.get("method") as PaymentMethod;
   const paidOn = formData.get("paidOn") as string;
   const reference = (formData.get("reference") as string)?.trim() || null;
 
-  if (!salesReportId || !paidOn || !method) return { error: "Please fill in every required field." };
+  if (!salesReportId || !paidOn || !method || !type) return { error: "Please fill in every required field." };
   if (!(method in PAYMENT_METHOD_LABELS)) return { error: "Choose a valid payment method." };
+  if (!(type in PAYMENT_TYPE_LABELS)) return { error: "Choose a valid payment type." };
   if (!Number.isFinite(amount) || amount <= 0) return { error: "Payment amount must be a positive number." };
   const date = new Date(paidOn);
   if (Number.isNaN(date.getTime())) return { error: "Enter a valid date." };
@@ -88,6 +90,7 @@ export async function addPayment(formData: FormData): Promise<ActionState> {
     data: {
       salesReportId,
       amount,
+      type,
       method,
       paidOn: date,
       reference,

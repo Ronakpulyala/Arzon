@@ -1,4 +1,11 @@
-import type { SalesReport, SalesPayment, SalesStatus, PaymentMethod, PaymentStatus } from "@prisma/client";
+import type {
+  SalesReport,
+  SalesPayment,
+  SalesStatus,
+  PaymentMethod,
+  PaymentStatus,
+  PaymentType
+} from "@prisma/client";
 
 export { formatCurrency } from "@/lib/format";
 
@@ -22,6 +29,18 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   UPI: "UPI",
   CARD: "Card",
   OTHER: "Other"
+};
+
+export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
+  ADVANCE: "Pre-payment (advance)",
+  FINAL: "Post-payment (final)",
+  FULL: "Full payment"
+};
+
+export const PAYMENT_TYPE_TAGS: Record<PaymentType, string> = {
+  ADVANCE: "Pre-payment",
+  FINAL: "Post-payment",
+  FULL: "Full"
 };
 
 export const PAYMENT_STATUS_STYLES: Record<PaymentStatus, { label: string; badge: string }> = {

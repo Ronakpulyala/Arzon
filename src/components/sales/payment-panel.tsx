@@ -8,22 +8,31 @@ import { formatDate } from "@/lib/format";
 import {
   PAYMENT_METHOD_LABELS,
   PAYMENT_STATUS_STYLES,
+  PAYMENT_TYPE_LABELS,
+  PAYMENT_TYPE_TAGS,
   formatCurrency,
   outstanding,
   pendingApprovalAmount,
   totalCollected,
   type SalesReportWithPayments
 } from "@/lib/sales";
-import type { PaymentMethod } from "@prisma/client";
+import type { PaymentMethod, PaymentType } from "@prisma/client";
 import { clsx } from "clsx";
 
 const input =
   "mt-1 rounded-md border border-ink-100 bg-white px-2.5 py-1.5 text-sm outline-none focus-visible:border-amber-500";
 
+const TYPE_TAG_STYLES: Record<PaymentType, string> = {
+  ADVANCE: "bg-navy-900/10 text-navy-800",
+  FINAL: "bg-amber-100 text-amber-600",
+  FULL: "bg-ink-100 text-ink-700"
+};
+
 export function PaymentPanel({ report }: { report: SalesReportWithPayments }) {
   const { state, isPending, onSubmit } = useFormAction(addPayment);
   const [removing, setRemoving] = useState<string | null>(null);
   const methods = Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[];
+  const types = Object.keys(PAYMENT_TYPE_LABELS) as PaymentType[];
 
   const collected = totalCollected(report);
   const pending = pendingApprovalAmount(report);
@@ -32,6 +41,11 @@ export function PaymentPanel({ report }: { report: SalesReportWithPayments }) {
     .reduce((s, p) => s + p.amount, 0);
   const pct = report.dealValue > 0 ? Math.min((collected / report.dealValue) * 100, 100) : 0;
   const canLog = report.status !== "CLOSED_LOST" && claimed < report.dealValue;
+
+  // Smart default: no payments yet → suggest an advance (pre-payment); once
+  // there's at least one, suggest the closing/final payment instead.
+  const hasAnyClaimed = report.payments.some((p) => p.status !== "REJECTED");
+  const defaultType: PaymentType = hasAnyClaimed ? "FINAL" : "ADVANCE";
 
   async function remove(id: string) {
     setRemoving(id);
@@ -73,7 +87,15 @@ export function PaymentPanel({ report }: { report: SalesReportWithPayments }) {
             .sort((a, b) => +new Date(b.paidOn) - +new Date(a.paidOn))
             .map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-3 text-xs text-ink-700">
-                <span className="flex min-w-0 items-center gap-2">
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span
+                    className={clsx(
+                      "shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-medium",
+                      TYPE_TAG_STYLES[p.type]
+                    )}
+                  >
+                    {PAYMENT_TYPE_TAGS[p.type]}
+                  </span>
                   <span
                     className={clsx(
                       "shrink-0 rounded-sm px-1.5 py-0.5 text-[10px] font-medium",
@@ -118,8 +140,18 @@ export function PaymentPanel({ report }: { report: SalesReportWithPayments }) {
         <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
           <input type="hidden" name="salesReportId" value={report.id} />
           <div>
+            <label className="block text-[11px] text-ink-500">Type</label>
+            <select name="type" defaultValue={defaultType} className={input}>
+              {types.map((t) => (
+                <option key={t} value={t}>
+                  {PAYMENT_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="block text-[11px] text-ink-500">Amount (₹)</label>
-            <input name="amount" type="number" min="1" step="1" required className={`${input} w-28`} />
+            <input name="amount" type="number" min="1" step="1" required className={`${input} w-24`} />
           </div>
           <div>
             <label className="block text-[11px] text-ink-500">Date</label>
@@ -135,7 +167,7 @@ export function PaymentPanel({ report }: { report: SalesReportWithPayments }) {
               ))}
             </select>
           </div>
-          <div className="min-w-[120px] flex-1">
+          <div className="min-w-[110px] flex-1">
             <label className="block text-[11px] text-ink-500">Reference (optional)</label>
             <input name="reference" placeholder="UTR / receipt no." className={`${input} w-full`} />
           </div>
@@ -158,7 +190,8 @@ export function PaymentPanel({ report }: { report: SalesReportWithPayments }) {
 
       {canLog && (
         <p className="mt-2 text-[11px] text-ink-500">
-          New payments need Admin approval before they count as collected.
+          Log the advance now, then come back and add the post-payment later — both stay on this
+          deal. New payments need Admin approval before they count as collected.
         </p>
       )}
 

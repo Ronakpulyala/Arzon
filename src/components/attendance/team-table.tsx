@@ -3,9 +3,10 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import type { Attendance, AttendanceStatus, User } from "@prisma/client";
-import { formatTime } from "@/lib/format";
-import { STATUS_STYLES } from "@/lib/attendance";
+import { formatDate, formatTime } from "@/lib/format";
+import { formatMinutes, STATUS_STYLES } from "@/lib/attendance";
 import { AttendanceBadge } from "@/components/attendance/attendance-badge";
+import { ExportCsvButton } from "@/components/reports/export-csv-button";
 
 type Row = Pick<User, "id" | "name" | "department" | "designation"> & { attendance: Attendance[] };
 type Filter = AttendanceStatus | "ALL" | "NOT_IN";
@@ -28,6 +29,19 @@ export function TeamAttendanceTable({ employees }: { employees: Row[] }) {
 
   const checkedIn = employees.filter((e) => e.attendance[0]?.loginAt).length;
 
+  const csvRows = rows.map((emp) => {
+    const today = emp.attendance[0];
+    return {
+      Employee: emp.name,
+      Department: emp.department ?? "",
+      "Check-in": formatTime(today?.loginAt ?? null),
+      "Check-out": formatTime(today?.logoutAt ?? null),
+      "Break time": formatMinutes(today?.breakMinutes ?? 0),
+      Hours: today?.hoursLogged ?? "",
+      Status: today ? STATUS_STYLES[today.status].label : "Not checked in"
+    };
+  });
+
   return (
     <div className="rounded-lg border border-ink-100 bg-surface-card shadow-subtle">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-5 py-4">
@@ -39,6 +53,7 @@ export function TeamAttendanceTable({ employees }: { employees: Row[] }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <ExportCsvButton rows={csvRows} filename={`attendance-${formatDate(new Date(), { year: "numeric" })}.csv`} />
           <div className="relative">
             <Search
               size={14}
@@ -75,6 +90,7 @@ export function TeamAttendanceTable({ employees }: { employees: Row[] }) {
               <th className="px-5 py-2.5 font-medium">Department</th>
               <th className="px-5 py-2.5 font-medium">Check-in</th>
               <th className="px-5 py-2.5 font-medium">Check-out</th>
+              <th className="px-5 py-2.5 font-medium">Break</th>
               <th className="px-5 py-2.5 font-medium">Hours</th>
               <th className="px-5 py-2.5 font-medium">Status</th>
             </tr>
@@ -82,7 +98,7 @@ export function TeamAttendanceTable({ employees }: { employees: Row[] }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-6 text-center text-sm text-ink-500">
+                <td colSpan={7} className="px-5 py-6 text-center text-sm text-ink-500">
                   No one matches that filter.
                 </td>
               </tr>
@@ -104,6 +120,15 @@ export function TeamAttendanceTable({ employees }: { employees: Row[] }) {
                     </td>
                     <td className="px-5 py-3 tabular-nums text-ink-700">
                       {formatTime(today?.logoutAt ?? null)}
+                    </td>
+                    <td className="px-5 py-3 text-ink-700">
+                      {today?.breakStartedAt ? (
+                        <span className="text-warn">On break</span>
+                      ) : today?.breakMinutes ? (
+                        formatMinutes(today.breakMinutes)
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-5 py-3 tabular-nums text-ink-700">
                       {today?.hoursLogged != null ? `${today.hoursLogged}h` : "—"}

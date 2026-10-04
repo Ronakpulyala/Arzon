@@ -58,16 +58,20 @@ model User {
 }
 
 model Attendance {
-  id         String            @id @default(cuid())
-  userId     String
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date       DateTime          @db.Date
-  loginAt    DateTime?
-  logoutAt   DateTime?
-  status     AttendanceStatus  @default(PRESENT)
-  hoursLogged Float?
-  notes      String?
-  createdAt  DateTime          @default(now())
+  id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime          @db.Date
+  loginAt        DateTime?
+  logoutAt       DateTime?
+  status         AttendanceStatus  @default(PRESENT)
+  hoursLogged    Float?
+  // Break tracking: breakStartedAt is set while a break is in progress, then
+  // cleared and folded into breakMinutes (total for the day) when it ends.
+  breakStartedAt DateTime?
+  breakMinutes   Int               @default(0)
+  notes          String?
+  createdAt      DateTime          @default(now())
 
   @@unique([userId, date])
   @@index([date])
@@ -145,11 +149,18 @@ enum PaymentStatus {
   REJECTED
 }
 
+enum PaymentType {
+  ADVANCE // Pre-payment, taken before the deal is fully delivered
+  FINAL   // Post-payment, the closing balance on a deal
+  FULL    // One-shot payment covering the whole deal value
+}
+
 model SalesPayment {
   id            String        @id @default(cuid())
   salesReportId String
   salesReport   SalesReport   @relation(fields: [salesReportId], references: [id], onDelete: Cascade)
   amount        Float
+  type          PaymentType   @default(FULL)
   method        PaymentMethod @default(BANK_TRANSFER)
   paidOn        DateTime      @db.Date
   reference     String?

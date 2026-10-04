@@ -54,8 +54,16 @@ export function determineStatus(loginAt: Date): AttendanceStatus {
     : AttendanceStatus.PRESENT;
 }
 
-export function hoursBetween(start: Date, end: Date): number {
-  return Math.round(((end.getTime() - start.getTime()) / 3_600_000) * 100) / 100;
+export function hoursBetween(start: Date, end: Date, breakMinutes = 0): number {
+  const raw = (end.getTime() - start.getTime()) / 3_600_000 - breakMinutes / 60;
+  return Math.max(Math.round(raw * 100) / 100, 0);
+}
+
+export function formatMinutes(mins: number): string {
+  if (mins <= 0) return "0m";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
 export const STATUS_STYLES: Record<

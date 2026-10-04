@@ -12,14 +12,18 @@ next-auth v4 (credentials, JWT) · recharts
 
 - **Dashboard** — live, role-aware: attendance today, pending leaves, sales closed / collected this
   month, revenue chart, recent deals.
-- **Attendance** — check-in/out, PRESENT/LATE (10:15 cut-off), month-by-month calendar, searchable team table (Admin/HR).
+- **Attendance** — check-in/out, break tracking (Start/End break with a live timer, break time deducted
+  from hours logged, checkout blocked mid-break), PRESENT/LATE (10:15 cut-off), month-by-month calendar,
+  searchable + CSV-exportable team table (Admin/HR).
 - **Leaves** — request form with overlap + balance validation, cancel pending requests, balance bars,
   Admin/HR approval queue and full request history with filters.
-- **Sales Reports** — employees log deals and submit payments against each one (progress bar,
-  over-claiming blocked). **Payments require Admin approval** before they count as collected — an
-  Admin's own entries auto-approve. Admins get a "Payments awaiting approval" queue at the top of the
-  page. Admin/HR also see every deal (filter by employee/stage, totals) and a full **payments ledger**
-  with a status column/filter.
+- **Sales Reports** — employees log deals and submit payments against each one, tagged as
+  **Pre-payment (advance)**, **Post-payment (final)**, or **Full payment** (the form smart-defaults:
+  advance for the first payment on a deal, final for the next). Progress bar, over-claiming blocked.
+  **Payments require Admin approval** before they count as collected — an Admin's own entries
+  auto-approve. Admins get a "Payments awaiting approval" queue at the top of the page. Admin/HR also
+  see every deal (filter by employee/stage, totals) and a full **payments ledger** with status and
+  type columns/filters.
 - **Reports** (Admin/HR) — period filter, KPIs, revenue / collections / attendance / leave charts,
   per-employee performance table, CSV export.
 - **Salary** — every employee sees their payout history and an *estimated next payout*

@@ -19,6 +19,9 @@ CREATE TYPE "PaymentMethod" AS ENUM ('CASH', 'BANK_TRANSFER', 'UPI', 'CARD', 'OT
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
+-- CreateEnum
+CREATE TYPE "PaymentType" AS ENUM ('ADVANCE', 'FINAL', 'FULL');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -47,6 +50,8 @@ CREATE TABLE "Attendance" (
     "logoutAt" TIMESTAMP(3),
     "status" "AttendanceStatus" NOT NULL DEFAULT 'PRESENT',
     "hoursLogged" DOUBLE PRECISION,
+    "breakStartedAt" TIMESTAMP(3),
+    "breakMinutes" INTEGER NOT NULL DEFAULT 0,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -108,6 +113,7 @@ CREATE TABLE "SalesPayment" (
     "id" TEXT NOT NULL,
     "salesReportId" TEXT NOT NULL,
     "amount" DOUBLE PRECISION NOT NULL,
+    "type" "PaymentType" NOT NULL DEFAULT 'FULL',
     "method" "PaymentMethod" NOT NULL DEFAULT 'BANK_TRANSFER',
     "paidOn" DATE NOT NULL,
     "reference" TEXT,

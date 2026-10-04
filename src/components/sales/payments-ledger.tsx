@@ -4,12 +4,13 @@ import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { clsx } from "clsx";
 import { formatDate } from "@/lib/format";
-import { PAYMENT_METHOD_LABELS, PAYMENT_STATUS_STYLES, formatCurrency } from "@/lib/sales";
-import type { PaymentMethod, PaymentStatus } from "@prisma/client";
+import { PAYMENT_METHOD_LABELS, PAYMENT_STATUS_STYLES, PAYMENT_TYPE_TAGS, formatCurrency } from "@/lib/sales";
+import type { PaymentMethod, PaymentStatus, PaymentType } from "@prisma/client";
 
 export type LedgerRow = {
   id: string;
   amount: number;
+  type: PaymentType;
   method: PaymentMethod;
   status: PaymentStatus;
   paidOn: Date;
@@ -114,6 +115,7 @@ export function PaymentsLedger({ payments }: { payments: LedgerRow[] }) {
               <th className="px-5 py-2.5 font-medium">Date</th>
               <th className="px-5 py-2.5 font-medium">Employee</th>
               <th className="px-5 py-2.5 font-medium">Client</th>
+              <th className="px-5 py-2.5 font-medium">Type</th>
               <th className="px-5 py-2.5 font-medium">Method</th>
               <th className="px-5 py-2.5 font-medium">Status</th>
               <th className="px-5 py-2.5 text-right font-medium">Amount</th>
@@ -122,7 +124,7 @@ export function PaymentsLedger({ payments }: { payments: LedgerRow[] }) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-6 text-center text-sm text-ink-500">
+                <td colSpan={7} className="px-5 py-6 text-center text-sm text-ink-500">
                   No payments match.
                 </td>
               </tr>
@@ -140,6 +142,7 @@ export function PaymentsLedger({ payments }: { payments: LedgerRow[] }) {
                     <p className="text-ink-900">{p.clientName}</p>
                     <p className="text-xs text-ink-500">{p.courseOrPlan}</p>
                   </td>
+                  <td className="px-5 py-3 text-ink-700">{PAYMENT_TYPE_TAGS[p.type]}</td>
                   <td className="px-5 py-3 text-ink-700">{PAYMENT_METHOD_LABELS[p.method]}</td>
                   <td className="px-5 py-3">
                     <span

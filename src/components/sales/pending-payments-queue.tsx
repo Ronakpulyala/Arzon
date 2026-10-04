@@ -4,12 +4,13 @@ import { useState } from "react";
 import { Check, X } from "lucide-react";
 import { approvePayment, rejectPayment } from "@/app/(dashboard)/sales-reports/actions";
 import { formatDate } from "@/lib/format";
-import { PAYMENT_METHOD_LABELS, formatCurrency } from "@/lib/sales";
-import type { PaymentMethod } from "@prisma/client";
+import { PAYMENT_METHOD_LABELS, PAYMENT_TYPE_TAGS, formatCurrency } from "@/lib/sales";
+import type { PaymentMethod, PaymentType } from "@prisma/client";
 
 export type PendingPaymentRow = {
   id: string;
   amount: number;
+  type: PaymentType;
   method: PaymentMethod;
   paidOn: Date;
   reference: string | null;
@@ -55,8 +56,8 @@ export function PendingPaymentsQueue({ payments }: { payments: PendingPaymentRow
                   {p.clientName}
                 </p>
                 <p className="mt-0.5 text-xs text-ink-500">
-                  {p.courseOrPlan} &middot; {PAYMENT_METHOD_LABELS[p.method]} &middot;{" "}
-                  {formatDate(p.paidOn, { year: "numeric" })}
+                  {PAYMENT_TYPE_TAGS[p.type]} &middot; {p.courseOrPlan} &middot;{" "}
+                  {PAYMENT_METHOD_LABELS[p.method]} &middot; {formatDate(p.paidOn, { year: "numeric" })}
                   {p.reference && ` · ${p.reference}`}
                 </p>
               </div>
